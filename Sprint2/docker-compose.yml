@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: pereval
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql:/docker-entrypoint-initdb.d  # Монтируем SQL-скрипты
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - FSTR_DB_HOST=db
+      - FSTR_DB_PORT=5432
+      - FSTR_DB_LOGIN=postgres
+      - FSTR_DB_PASS=password
+      - FSTR_DB_NAME=pereval
+
+volumes:
+  postgres_data:
